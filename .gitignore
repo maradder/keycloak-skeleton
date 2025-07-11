@@ -1,0 +1,15 @@
+
+
+# Environmental variables files
+*.env*
+
+# Keep the example file for reference
+!.env.example
+
+# Cache files for Node.js and Python
+node_modules/
+__pycache__/
+
+# Logs and temporary files
+*.log
+*.tmp
