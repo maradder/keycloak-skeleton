@@ -2,7 +2,7 @@
 
 ## About
 
-This is a simple starter app with React, FastAPI, and Keycloak for authentication. It provides a basic setup to demonstrate how we can integrate keycloak into our application for user authentication and authorization. This is only intended to help solve some of the initial integration challenges and is definitely not a production-ready solution.
+This is a simple starter application demonstrating React, FastAPI, and Keycloak integration for authentication and authorization. The project provides a foundation with comprehensive error handling, security best practices, and containerized deployment options. While suitable for proof-of-concept work, additional hardening would be needed for production environments.
 
 ## Dependencies
 
@@ -25,6 +25,7 @@ This is a simple starter app with React, FastAPI, and Keycloak for authenticatio
 ### Infrastructure
 - Docker and Docker Compose
 - Keycloak 21.0.0
+- Nginx (for frontend production builds)
 
 ## Project Structure
 
@@ -90,7 +91,9 @@ keycloak-skeleton
 │   │   ├── tsconfig.json
 │   │   ├── tsconfig.node.json
 │   │   └── vite.config.ts
-│   └── Dockerfile -- This isn't implemented yet
+│   ├── Dockerfile
+│   └── nginx.conf
+├── .gitignore
 └── README.md
 ```
 
@@ -105,18 +108,20 @@ cd keycloak-skeleton
 
 ### 2. Environment Configuration
 
-Create a `.env` file in the backend directory:
+**Important**: Never commit `.env` files to version control. Use the provided `.env.example` files as templates.
+
+Create a `.env` file in the backend directory based on `backend/.env.example`:
 
 ```bash
 # Keycloak Admin Configuration
 KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=admin123
+KEYCLOAK_ADMIN_PASSWORD=your-secure-password-here
 
 # Keycloak Client Configuration
 KEYCLOAK_SERVER_URL=http://keycloak:8080
 KEYCLOAK_REALM=testrealm
 KEYCLOAK_CLIENT_ID=test-client-id
-KEYCLOAK_CLIENT_SECRET=your-client-secret
+KEYCLOAK_CLIENT_SECRET=your-client-secret-here
 
 # FastAPI Configuration
 FASTAPI_HOST=0.0.0.0
@@ -131,11 +136,17 @@ VITE_API_BASE_URL=http://localhost:8000
 VITE_AUTH_SERVER_BASE_URL=http://localhost:8080
 ```
 
-### 3. Build Backend Docker Image
+**Security Note**: Replace default passwords and secrets with secure values before deployment.
 
+### 3. Build Docker Images
+
+Build the backend image:
 ```bash
+cd backend
 docker build -t keycloak-skeleton-backend .
 ```
+
+The frontend image will be built automatically by Docker Compose.
 
 ### 4. Configure Keycloak
 
@@ -155,33 +166,31 @@ docker-compose up keycloak -d
    - Valid Redirect URIs: `http://localhost:5173/*`
    - Web Origins: `http://localhost:5173`
 
-### 5. Install Frontend Dependencies
+### 5. Install Frontend Dependencies (Development Only)
 
+For local development:
 ```bash
+cd frontend/app
 npm install
 ```
 
 ## Running
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Full Docker Compose (Recommended)
 
 Start all services using Docker Compose:
 
 ```bash
+cd backend
 docker-compose up -d
 ```
 
 This will start:
 - Keycloak on http://localhost:8080
 - FastAPI backend on http://localhost:8000
+- React frontend on http://localhost:5173 (containerized)
 
-Then start the frontend development server:
-
-```bash
-npm run dev
-```
-
-The frontend will be available at http://localhost:5173
+All services will be fully containerized and production-ready.
 
 ### Option 2: Local Development
 
@@ -204,6 +213,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Run the frontend locally:
 
 ```bash
+cd frontend/app
 # Start development server
 npm run dev
 ```
@@ -219,14 +229,71 @@ After starting the services, the following endpoints are available:
 
 **Admin Routes:**
 - `GET /admin/admin-only` - Admin-only endpoint (requires admin role)
+- `POST /admin/refresh-keys` - Manually refresh Keycloak public keys (admin only)
 
 **Health Check:**
-- `GET /health` - Health check with Keycloak connectivity test
+- `GET /health` - Comprehensive health check with service status and Keycloak connectivity
 
 ### Stopping Services
 
 To stop all Docker services:
 
 ```bash
+cd backend
 docker-compose down
 ```
+
+## Features
+
+### Security
+- JWT token validation with public key verification
+- Role-based access control (RBAC)
+- Secure token refresh handling
+- Environment-based configuration management
+- Comprehensive `.gitignore` to prevent secret leakage
+
+### Error Handling
+- Structured error responses with appropriate HTTP status codes
+- Graceful degradation for service failures
+- User-friendly error messages in frontend
+- Retry mechanisms for failed operations
+- Comprehensive logging with appropriate levels
+
+### Production Features
+- Multi-stage Docker builds for optimized images
+- Nginx reverse proxy with security headers
+- Health check endpoints for monitoring
+- Gzip compression and static asset caching
+- TypeScript for type safety
+
+### Development Experience
+- Hot reloading for both frontend and backend
+- Comprehensive error handling and debugging
+- Clear separation of concerns
+- Professional code structure and organization
+
+## Security Considerations
+
+- **Environment Variables**: Never commit `.env` files. Use strong, unique passwords and secrets.
+- **Default Credentials**: Change all default passwords before deployment.
+- **Token Security**: Tokens are automatically refreshed and properly validated.
+- **CORS**: Configured for development; adjust for production domains.
+- **Logging**: Sensitive information is logged at debug level only.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Keycloak Connection Failed**: Ensure Keycloak is running and accessible at the configured URL.
+2. **Token Validation Errors**: Check that the realm and client configuration match between Keycloak and the application.
+3. **CORS Errors**: Verify that the frontend URL is properly configured in both Keycloak and the backend CORS settings.
+4. **Port Conflicts**: Ensure ports 8080, 8000, and 5173 are available.
+
+### Health Checks
+
+Monitor service health using:
+```bash
+curl http://localhost:8000/health
+```
+
+This endpoint provides detailed status information for all services.
