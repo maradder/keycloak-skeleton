@@ -25,8 +25,19 @@ async def refresh_keys(current_user: Dict[str, Any] = Depends(require_role("admi
     """Manually refresh Keycloak public keys (admin only)"""
     try:
         keycloak_auth.refresh_public_keys()
-        return {"message": "Public keys refreshed successfully"}
+        return {
+            "message": "Public keys refreshed successfully",
+            "admin_user": current_user.get("preferred_username")
+        }
+    except HTTPException:
+        # Re-raise HTTP exceptions from keycloak_auth.refresh_public_keys()
+        raise
     except Exception as e:
+        # Log the actual error for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to refresh public keys: {e}")
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to refresh public keys",

@@ -65,10 +65,10 @@ class KeycloakAuth:
             unverified_payload = jwt.get_unverified_claims(token)
             unverified_header = jwt.get_unverified_header(token)
 
-            logger.info(f"Token issuer: {unverified_payload.get('iss')}")
-            logger.info(f"Expected issuer: {KEYCLOAK_SERVER_URL}/realms/{KEYCLOAK_REALM}")
-            logger.info(f"Token audience: {unverified_payload.get('aud')}")
-            logger.info(f"Expected audience: {KEYCLOAK_CLIENT_ID}")
+            logger.debug(f"Token issuer: {unverified_payload.get('iss')}")
+            logger.debug(f"Expected issuer: {KEYCLOAK_SERVER_URL}/realms/{KEYCLOAK_REALM}")
+            logger.debug(f"Token audience: {unverified_payload.get('aud')}")
+            logger.debug(f"Expected audience: {KEYCLOAK_CLIENT_ID}")
 
             key_id = unverified_header.get("kid")
             if not key_id:
@@ -122,7 +122,7 @@ class KeycloakAuth:
                     format=serialization.PublicFormat.SubjectPublicKeyInfo,
                 )
 
-                logger.info("Successfully converted JWK to PEM")
+                logger.debug("Successfully converted JWK to PEM")
 
             except Exception as e:
                 logger.error(f"Failed to convert JWK to PEM: {e}")
@@ -161,16 +161,16 @@ class KeycloakAuth:
                 },
             )
 
-            logger.info(f"Token verified successfully for user: {payload.get('preferred_username')}")
+            logger.debug(f"Token verified successfully for user: {payload.get('preferred_username')}")
             return payload
 
         except JWTError as e:
             logger.error(f"JWT verification failed: {e}")
-            logger.error(f"Token header: {jwt.get_unverified_header(token)}")
-            logger.error(f"Token payload: {jwt.get_unverified_claims(token)}")
+            logger.debug(f"Token header: {jwt.get_unverified_header(token)}")
+            logger.debug(f"Token payload: {jwt.get_unverified_claims(token)}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token: {str(e)}",
+                detail="Invalid token",
             )
 
 # Initialize Keycloak auth

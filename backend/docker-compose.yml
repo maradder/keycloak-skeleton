@@ -29,6 +29,18 @@ services:
       keycloak:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - fastapi
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_AUTH_SERVER_BASE_URL=http://localhost:8080
+
 volumes:
   keycloak_data:
     driver: local
